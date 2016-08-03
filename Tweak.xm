@@ -14,6 +14,7 @@
 
 #define isiOS7 kCFCoreFoundationVersionNumber >= 847.20
 #define isiOS8 kCFCoreFoundationVersionNumber >= 1140.10
+#define isiOS9_2 kCFCoreFoundationVersionNumber >= 1242.13
 
 @interface SpringBoard
 -(void)_relaunchSpringBoardNow;
@@ -26,6 +27,7 @@
 -(void)lock;
 -(long long)userLockOrientation;
 -(bool)isLocked;
+- (_Bool)isUserLocked;
 @end
 
 @interface SBApplication
@@ -253,6 +255,15 @@ static void receivedNotification(CFNotificationCenterRef center, void *observer,
 %end // group HookSpringBoard8
 %end // hook SpringBoard
 
+%group iOS9_2_Fix
+%hook SBOrientationLockManager
+%new
+- (_Bool)isLocked {
+    return [self isUserLocked];
+}
+%end
+%end
+
 %ctor {
 	CFNotificationCenterAddObserver(
 		CFNotificationCenterGetDarwinNotifyCenter(),
@@ -276,6 +287,10 @@ static void receivedNotification(CFNotificationCenterRef center, void *observer,
 
 	springboardLockActive = springboardLockSetting;
 
+    	if (isiOS9_2) {
+        	%init(iOS9_2_Fix);
+    	}
+    
 	if (isiOS8) {
 		%init(HookSBApplication8);
 		%init(HookSpringBoard8);
